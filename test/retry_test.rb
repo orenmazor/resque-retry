@@ -9,6 +9,12 @@ class RetryTest < MiniTest::Unit::TestCase
     @worker.register_worker
   end
 
+  def teardown
+    Resque.redis.keys("resque-retry:*").each do |key|
+      assert Resque.redis.ttl(key) > 0, "#{key} set without TTL!"
+    end
+  end
+
   def test_resque_plugin_lint
     # will raise exception if were not a good plugin.
     assert Resque::Plugin.lint(Resque::Plugins::Retry)

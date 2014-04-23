@@ -23,6 +23,7 @@ module Resque
     #
     #     @retry_limit = 8  # default: 1
     #     @retry_delay = 60 # default: 0
+    #     @expire_retry_keys_after = 300 # default: 1 hour
     #
     #     # used to build redis key, for counting job attempts.
     #     def self.retry_identifier(url, hook_id, hmac_key)
@@ -328,6 +329,9 @@ module Resque
         retry_key = redis_retry_key(*args)
         Resque.redis.setnx(retry_key, -1)             # default to -1 if not set.
         @retry_attempt = Resque.redis.incr(retry_key) # increment by 1.
+        @expire_retry_keys_after ||= 60*60            # default to 1 hour
+
+        Resque.redis.expire(retry_key, @retry_delay.to_i + @expire_retry_keys_after.to_i)
       end
 
       # Resque after_perform hook
